@@ -130,21 +130,6 @@ ifeq ($(shell grep -q "struct selinux_state " $(srctree)/security/selinux/includ
 ccflags-y += -DKSU_COMPAT_HAS_SELINUX_STATE
 endif
 
-$(info -- KSU_NEXT: adding function 'int path_umount(struct path *path, int flags);' to $(srctree)/fs/namespace.c)
-PATH_UMOUNT = int path_umount(struct path *path, int flags)\n\
-{\n\t\
-        struct mount *mnt = real_mount(path->mnt);\n\t\
-        int ret;\n\t\
-        ret = can_umount(path, flags);\n\t\
-        if (!ret)\n\t\t\
-                ret = do_umount(mnt, flags);\n\t\
-        dput(path->dentry);\n\t\
-        mntput_no_expire(mnt);\n\t\
-        return ret;\n\
-}\n
-$(shell sed -i '/^static bool is_mnt_ns_file/i $(PATH_UMOUNT)' $(srctree)/fs/namespace.c;)
-endif
-
 ifneq ($(shell grep -Eq "^int path_umount" $(srctree)/fs/internal.h; echo $$?),0)
 $(shell sed -i '/^extern void __init mnt_init/a int path_umount(struct path *path, int flags);' $(srctree)/fs/internal.h;)
 $(info -- KSU_NEXT: adding 'int path_umount(struct path *path, int flags);' to $(srctree)/fs/internal.h)
